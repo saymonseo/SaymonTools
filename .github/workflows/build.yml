@@ -1,4 +1,4 @@
-name: Sweetch Windows
+name: SaymonTools Windows
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
@@ -11,27 +11,27 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Test
-        run: dotnet test tests/Sweetch.Tests -c Release
+        run: dotnet test tests/SaymonTools.Tests -c Release
       - name: Build
         shell: pwsh
         run: ./build.ps1
       - name: Verify packaged app
         shell: pwsh
         run: |
-          $p = Start-Process ./publish/Sweetch.exe -ArgumentList '--self-test', './self-test' -PassThru -Wait
+          $p = Start-Process ./publish/SaymonTools.exe -ArgumentList '--self-test', './self-test' -PassThru -Wait
           Get-Content ./self-test/self-test.txt
-          if ($p.ExitCode -ne 0) { throw 'Sweetch self-test failed' }
+          if ($p.ExitCode -ne 0) { throw 'SaymonTools self-test failed' }
       - name: Package
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force artifacts | Out-Null
-          Compress-Archive -Path ./publish/* -DestinationPath ./artifacts/Sweetch-1.0-win-x64.zip
+          Compress-Archive -Path ./publish/* -DestinationPath ./artifacts/SaymonTools-1.0-win-x64.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: Sweetch-1.0-Windows
+          name: SaymonTools-1.0-Windows
           path: artifacts/*
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Sweetch-previews
+          name: SaymonTools-previews
           path: self-test
