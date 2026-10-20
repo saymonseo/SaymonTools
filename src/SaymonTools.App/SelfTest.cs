@@ -129,6 +129,14 @@ internal static class SelfTest
         rename.Close();
         log.Add($"ok {Path.GetFileName(outDir)}/rename-dialog");
 
+        // No upload here: the window is fed a made-up result.
+        var tempSh = Core.Upload.Uploader.Hosts[0];
+        var uploaded = new UploadResultWindow(new Core.Upload.UploadResult("https://temp.sh/k3X9q/vacation.zip", tempSh, tempSh.Retention(Core.Upload.UploadExpiry.ThreeDays)),
+            N("Отпуск.zip", "Vacation.zip"));
+        SaveWindow(uploaded, Path.Combine(outDir, "upload-link.png"), 440);
+        uploaded.Close();
+        log.Add($"ok {Path.GetFileName(outDir)}/upload-link");
+
         SettingsWindow.Operations = () => [.. core, .. actions];
         settings.FavoriteOperations = ["image.to.webp", "image.compress"];
         settings.HiddenOperations = ["image.to.tiff"];

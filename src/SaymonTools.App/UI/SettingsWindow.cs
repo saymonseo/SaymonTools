@@ -334,6 +334,37 @@ internal sealed partial class SettingsWindow : Window
                 Save();
             }), glyph: ""));
 
+        root.Children.Add(SectionHeader(T("Upload links", "Ссылки на файлы")));
+        var host = Actions.UploadAction.HostFor(_settings);
+        var hostBelow = new StackPanel();
+        hostBelow.Children.Add(Wrap(Segmented(
+            [.. Core.Upload.Uploader.Hosts.Select(h => (h.Name, h.Id))],
+            host.Id,
+            value =>
+            {
+                _settings.UploadHost = value;
+                Save();
+                Rebuild();
+            })));
+        var limit = host.MaxBytes == long.MaxValue
+            ? T("no size limit", "размер не ограничен")
+            : T($"files up to {host.MaxBytes >> 30} GB", $"файлы до {host.MaxBytes >> 30} ГБ");
+        root.Children.Add(Card(T("Service", "Сервис"),
+            T($"Free, no account; {limit}. If it doesn't answer, another service is used.", $"Бесплатно, без регистрации; {limit}. Если сервис не отвечает, используется другой."),
+            null, hostBelow, Glyphs.Cloud));
+        if (host is Core.Upload.LitterboxHost)
+        {
+            root.Children.Add(Card(T("Keep the file", "Хранить файл"), null,
+                Segmented<Core.Upload.UploadExpiry>(
+                    [.. Enum.GetValues<Core.Upload.UploadExpiry>().Select(e => (host.Retention(e), e))],
+                    _settings.UploadExpiry,
+                    value =>
+                    {
+                        _settings.UploadExpiry = value;
+                        Save();
+                    }), glyph: Glyphs.Stopwatch));
+        }
+
         root.Children.Add(SectionHeader(T("System", "Система")));
         root.Children.Add(Card(T("Start when I sign in", "Запускать при входе в систему"), null,
             Toggle(ShellIntegration.IsAutostartEnabled, v => Apply(() => ShellIntegration.SetAutostart(v))), glyph: ""));

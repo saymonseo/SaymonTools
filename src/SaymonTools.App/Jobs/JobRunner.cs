@@ -51,6 +51,9 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
             return;
         }
 
+        if (op is IConfirmBeforeRun confirm && !confirm.Confirm(items))
+            return;
+
         parameters ??= new Dictionary<string, string>();
         if (op.Parameters.Count > 0 && parameters.Count == 0)
         {

@@ -37,4 +37,6 @@ public static class Glyphs
     public const string Subtitles = "\uE7F0";
     public const string Rename = "\uE8AC";
     public const string Undo = "\uE7A7";
+    public const string Cloud = "\uE753";
+    public const string Globe = "\uE774";
 }

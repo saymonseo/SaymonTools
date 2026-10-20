@@ -64,6 +64,15 @@ public sealed class AppSettings
     /// <summary>Folders whose new files are processed automatically.</summary>
     public List<WatchFolder> WatchFolders { get; set; } = [];
 
+    /// <summary>File host tried first by "Upload"; the others are used when it fails.</summary>
+    public string UploadHost { get; set; } = "tempsh";
+
+    /// <summary>How long Litterbox keeps uploads.</summary>
+    public Core.Upload.UploadExpiry UploadExpiry { get; set; } = Core.Upload.UploadExpiry.ThreeDays;
+
+    /// <summary>The user confirmed once that uploaded files are public to anyone with the link.</summary>
+    public bool UploadConsent { get; set; }
+
     /// <summary>Batch rename settings from last time (the dialog starts from them).</summary>
     public Core.Rename.RenameOptions? LastRename { get; set; }
 

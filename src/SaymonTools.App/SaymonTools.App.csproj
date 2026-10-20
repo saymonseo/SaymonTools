@@ -55,4 +55,9 @@
     <ProjectReference Include="..\SaymonTools.Core\SaymonTools.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- QR codes for upload links. -->
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
 </Project>

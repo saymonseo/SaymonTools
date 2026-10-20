@@ -766,7 +766,9 @@ internal sealed class WheelWindow : Window
     private static StackPanel SliceLabel(Operation op)
     {
         // Slices that first download a tool are shown a little faded.
-        var panel = new StackPanel { MaxWidth = 96, IsHitTestVisible = false, Opacity = op is Shell.NeedsToolOperation ? 0.6 : 1 };
+        // A long single word ("Переименовать") would break mid-word; it stays whole and the slice's Viewbox shrinks it.
+        var oneWord = !op.Label.Contains(' ');
+        var panel = new StackPanel { MaxWidth = oneWord ? double.PositiveInfinity : 96, IsHitTestVisible = false, Opacity = op is Shell.NeedsToolOperation ? 0.6 : 1 };
         var isFormat = op.Wheel == WheelKind.Convert && op.Label.Length <= 6 && op.Label.ToUpperInvariant() == op.Label;
         if (!isFormat)
         {
@@ -788,7 +790,7 @@ internal sealed class WheelWindow : Window
             FontWeight = FontWeights.SemiBold,
             Foreground = Theme.Text,
             TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.Wrap,
+            TextWrapping = oneWord ? TextWrapping.NoWrap : TextWrapping.Wrap,
             HorizontalAlignment = HorizontalAlignment.Center,
         });
         if (!string.IsNullOrEmpty(op.Subtitle))
@@ -797,6 +799,7 @@ internal sealed class WheelWindow : Window
             {
                 Text = op.Subtitle,
                 Tag = "subtitle",
+                MaxWidth = 96,
                 FontSize = 10.5,
                 Foreground = Theme.Muted,
                 TextAlignment = TextAlignment.Center,

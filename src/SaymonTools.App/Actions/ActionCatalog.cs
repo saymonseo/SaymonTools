@@ -17,6 +17,8 @@ internal static class ActionCatalog
     [
         new AppAction("action.rename", T("Rename", "Переименовать"), Glyphs.Rename, items => BatchRenamer.RenameAsync(items, settings, save, jobs),
             T("with preview", "с предпросмотром")),
+        new UploadAction(settings, save, (result, name) =>
+            Application.Current?.Dispatcher.BeginInvoke(() => UploadResultWindow.Show(result, name))),
         new AppAction("action.copy", T("Copy", "Копировать"), Glyphs.Copy, items => CopyOrMoveAsync(items, move: false, settings, save), T("to folder…", "в папку…")),
         new AppAction("action.move", T("Move", "Переместить"), Glyphs.Move, items => CopyOrMoveAsync(items, move: true, settings, save), T("to folder…", "в папку…")),
         new AppAction("action.path", T("Copy path", "Копировать путь"), Glyphs.Link, CopyPathAsync),
