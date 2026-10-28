@@ -21,6 +21,7 @@ internal sealed class WheelController
     private IReadOnlyList<Operation> _coreOperations;
     private IReadOnlyList<Operation> _actions;
     private readonly List<string> _pendingPaths = [];
+    private WheelKind _pendingWheel = WheelKind.Convert;
     private readonly DispatcherTimer _argsTimer;
     private WheelWindow? _wheel;
 
@@ -40,7 +41,7 @@ internal sealed class WheelController
             _argsTimer.Stop();
             var paths = _pendingPaths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             _pendingPaths.Clear();
-            OpenFor(paths, ExplorerSelection.CursorOrCenter());
+            OpenFor(paths, ExplorerSelection.CursorOrCenter(), _pendingWheel);
         };
 
         input.IsWheelKey = key => !_settings.Paused && _settings.WheelFor(key) is not null;
@@ -177,14 +178,16 @@ internal sealed class WheelController
     }
 
     /// <summary>Paths from the context menu (possibly one call per file).</summary>
-    public void QueuePaths(IEnumerable<string> paths)
+    /// <param name="wheel">The wheel to open, from the Explorer submenu (Convert, Tools or Actions).</param>
+    public void QueuePaths(IEnumerable<string> paths, WheelKind wheel = WheelKind.Convert)
     {
+        _pendingWheel = wheel;
         _pendingPaths.AddRange(paths);
         _argsTimer.Stop();
         _argsTimer.Start();
     }
 
-    public void OpenFor(IReadOnlyList<string> paths, Win32.POINT at)
+    public void OpenFor(IReadOnlyList<string> paths, Win32.POINT at, WheelKind wheel = WheelKind.Convert)
     {
         var items = paths
             .Where(p => File.Exists(p) || Directory.Exists(p))
@@ -192,7 +195,7 @@ internal sealed class WheelController
             .ToList();
         if (items.Count == 0)
             return;
-        Open(WheelMode.Click, WheelKind.Convert, items, at);
+        Open(WheelMode.Click, wheel, items, at);
     }
 
     private void Open(WheelMode mode, WheelKind wheel, IReadOnlyList<FileItem>? items, Win32.POINT at)

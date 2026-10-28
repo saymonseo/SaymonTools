@@ -143,7 +143,7 @@ internal static class SelfTest
         Check(videoOptions.Parameters["height"] == "1080" && videoOptions.Parameters["sound"] == "Remove", "custom video parameters");
         videoOptions.Close();
         var imageOptions = new CustomOptionsDialog(false, [new FileItem(N(@"C:\Фото\отпуск.jpg", @"C:\Photos\vacation.jpg"))], null,
-            new Core.Backends.ImageSettings { Resize = Core.Backends.ImageResize.Exact, Width = 1080, Height = 1080, TargetKb = 500, StripMetadata = true }, tools);
+            new Core.Backends.ImageSettings { Resize = Core.Backends.ImageResize.Exact, Width = 1080, Height = 1080, TargetKb = 500, StripMetadata = true }, tools, quickTitle: "WEBP");
         SaveWindow(imageOptions, Path.Combine(outDir, "custom-image.png"), 700);
         imageOptions.Close();
         log.Add($"ok {Path.GetFileName(outDir)}/custom options");

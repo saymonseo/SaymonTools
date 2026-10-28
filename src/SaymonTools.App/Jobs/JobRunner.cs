@@ -56,6 +56,15 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
             return;
 
         parameters ??= new Dictionary<string, string>();
+        // The card keeps the name of the slice the user chose, even when it runs as "Custom…".
+        var shown = op;
+        if (!automatic && parameters.Count == 0 && settings.AskQuickSettings && QuickFor(op) is { } quick)
+        {
+            if (AskCustomOptions(quick.Video is not null, items, quick.Video, quick.Image, op.Label) is not { } chosen)
+                return;
+            op = quick.Custom;
+            parameters = chosen;
+        }
         if (op.Parameters.Count > 0 && parameters.Count == 0)
         {
             var dialog = new ParameterDialog(op, items);
@@ -65,7 +74,7 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
         }
         if (parameters.Count == 0 && CustomOptionsDialog.Handles(op.Id))
         {
-            if (AskCustomOptions(op.Id == VideoSettings.OperationId, items) is not { } chosen)
+            if (AskCustomOptions(op.Id == VideoSettings.OperationId, items, settings.LastVideo, settings.LastImage, null) is not { } chosen)
                 return;
             parameters = chosen;
         }
@@ -74,7 +83,7 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
 
         _window ??= new JobsWindow();
         using var cts = new CancellationTokenSource();
-        var title = op.Wheel == WheelKind.Convert && op.Label.ToUpperInvariant() == op.Label ? T($"Convert to {op.Label}", $"Конвертация в {op.Label}") : op.Label;
+        var title = shown.Wheel == WheelKind.Convert && shown.Label.ToUpperInvariant() == shown.Label ? T($"Convert to {shown.Label}", $"Конвертация в {shown.Label}") : shown.Label;
         var detail = items.Count == 1 ? items[0].Name : Items(items.Count);
         var card = _window.Add(title, detail, iconPath: items[0].Path, cancel: () =>
         {
@@ -117,15 +126,30 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
     /// <summary>Called after a preset was added from the "Custom…" window, so the wheels pick it up.</summary>
     public Action? PresetsChanged { get; set; }
 
+    /// <summary>Finds an operation by id (set by the app; used to run a slice as "Custom…").</summary>
+    public Func<string, Operation?>? FindOperation { get; set; }
+
+    /// <summary>The "Custom…" operation and the settings the window starts with, for slices that have one.</summary>
+    private (Operation Custom, VideoSettings? Video, ImageSettings? Image)? QuickFor(Operation op)
+    {
+        var video = QuickSettings.Video(op.Id);
+        var image = video is null ? QuickSettings.Image(op.Id) : null;
+        if (video is null && image is null)
+            return null;
+        var custom = FindOperation?.Invoke(video is not null ? VideoSettings.OperationId : ImageSettings.OperationId);
+        return custom is null ? null : (custom, video, image);
+    }
+
     /// <summary>The "Custom…" window for video or images; null when cancelled.</summary>
-    private IReadOnlyDictionary<string, string>? AskCustomOptions(bool video, IReadOnlyList<FileItem> items)
+    /// <param name="quickTitle">The slice that was chosen, when the window opens for it rather than for "Custom…".</param>
+    private IReadOnlyDictionary<string, string>? AskCustomOptions(bool video, IReadOnlyList<FileItem> items, VideoSettings? video0, ImageSettings? image0, string? quickTitle)
     {
         // A background app's dialog opens behind Explorer without a foreground owner.
         var owner = ForegroundHelper.Host();
         CustomOptionsDialog dialog;
         try
         {
-            dialog = new CustomOptionsDialog(video, items, settings.LastVideo, settings.LastImage, tools) { Owner = owner };
+            dialog = new CustomOptionsDialog(video, items, video0, image0, tools, quickTitle: quickTitle) { Owner = owner };
             if (dialog.ShowDialog() != true)
                 return null;
         }
@@ -142,6 +166,12 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
             settings.Presets.Add(video
                 ? new Preset { Name = name, Kind = PresetKind.Video, Format = dialog.VideoResult.Format, Video = dialog.VideoResult }
                 : new Preset { Name = name, Kind = PresetKind.Image, Format = dialog.ImageResult.Format, Image = dialog.ImageResult });
+        }
+        if (dialog.DontAskAgain)
+        {
+            settings.AskQuickSettings = false;
+            Notifications.Show(T("Settings window turned off", "Окно настроек отключено"),
+                T("Slices now convert right away. Turn it back on in Settings → General.", "Секторы теперь конвертируют сразу. Включить снова: Настройки → Основные."));
         }
         settings.Save();
         if (dialog.PresetName is not null)

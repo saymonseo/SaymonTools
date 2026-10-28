@@ -73,6 +73,9 @@ public sealed class AppSettings
     /// <summary>The user confirmed once that uploaded files are public to anyone with the link.</summary>
     public bool UploadConsent { get; set; }
 
+    /// <summary>Choosing a video or image slice (MP4, WEBP, Compress…) first shows its settings window.</summary>
+    public bool AskQuickSettings { get; set; } = true;
+
     /// <summary>"Custom…" video settings from last time (the window starts from them).</summary>
     public Core.Backends.VideoSettings? LastVideo { get; set; }
 

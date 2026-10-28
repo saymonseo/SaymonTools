@@ -33,17 +33,22 @@ internal sealed class CustomOptionsDialog : Window
     private string _sourceInfo = "";
     private int? _sourceShortSide;
     private bool _saveAsPreset;
+    private readonly bool _quick;
 
     /// <param name="presetMode">Editing a preset: no files, no "save as preset", the button says Save.</param>
-    public CustomOptionsDialog(bool video, IReadOnlyList<FileItem> items, VideoSettings? video0, ImageSettings? image0, ToolLocator tools, bool presetMode = false)
+    /// <param name="quickTitle">The wheel slice (e.g. "MP4") the window opened for; it then offers to stop asking.</param>
+    public CustomOptionsDialog(bool video, IReadOnlyList<FileItem> items, VideoSettings? video0, ImageSettings? image0, ToolLocator tools, bool presetMode = false, string? quickTitle = null)
     {
+        _quick = quickTitle is not null;
         _video = video;
         _presetMode = presetMode;
         _items = items;
         _videoSettings = video0 ?? new VideoSettings();
         _imageSettings = image0 ?? new ImageSettings();
         Theme.Refresh();
-        Title = video ? T("Video settings", "Настройки видео") : T("Image settings", "Настройки изображения");
+        Title = quickTitle is not null
+            ? T($"{quickTitle} — settings", $"{quickTitle} — настройки")
+            : video ? T("Video settings", "Настройки видео") : T("Image settings", "Настройки изображения");
         Width = 700;
         Height = 820;
         MinHeight = 520;
@@ -83,6 +88,9 @@ internal sealed class CustomOptionsDialog : Window
     public ImageSettings ImageResult => _imageSettings;
 
     public IReadOnlyDictionary<string, string> Parameters => _video ? _videoSettings.ToParameters() : _imageSettings.ToParameters();
+
+    /// <summary>The user asked to convert right away from now on (opened for a slice only).</summary>
+    public bool DontAskAgain { get; private set; }
 
     /// <summary>The name for a new preset when the user asked to keep the settings; null otherwise.</summary>
     public string? PresetName => _saveAsPreset && !_presetMode ? _presetName.Text.Trim() : null;
@@ -167,6 +175,12 @@ internal sealed class CustomOptionsDialog : Window
                 root.Children.Add(FieldLabel(T("Preset name (appears on the wheel)", "Название шаблона (появится в меню)"), 10));
                 root.Children.Add(_presetName);
             }
+        }
+
+        if (_quick)
+        {
+            root.Children.Add(OptionRow(T("Don't show this window, convert right away", "Не показывать это окно, конвертировать сразу"), DontAskAgain, v => DontAskAgain = v));
+            root.Children.Add(Hint(T("You can turn it back on in Settings → General. “Custom…” on the wheel always asks.", "Включить снова можно в Настройках → Основные. Сектор «Настроить…» спрашивает всегда.")));
         }
 
         var ok = Button(_presetMode ? T("Save", "Сохранить") : T("Convert", "Конвертировать"), Accept, primary: true, glyph: _presetMode ? "" : Glyphs.Play);

@@ -333,6 +333,14 @@ internal sealed partial class SettingsWindow : Window
                 Save();
             }), glyph: ""));
 
+        root.Children.Add(Card(T("Settings window when choosing a slice", "Окно настроек при выборе функции"),
+            T("For video and images: format, resolution, quality, sound — set right before converting.", "Для видео и изображений: формат, разрешение, качество, звук — прямо перед конвертацией."),
+            Toggle(_settings.AskQuickSettings, v =>
+            {
+                _settings.AskQuickSettings = v;
+                Save();
+            }), glyph: Glyphs.Equalizer));
+
         root.Children.Add(SectionHeader(T("Upload links", "Ссылки на файлы")));
         var host = Actions.UploadAction.HostFor(_settings);
         var hostBelow = new StackPanel();

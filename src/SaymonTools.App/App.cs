@@ -85,6 +85,7 @@ internal sealed class App : Application
 
         _controller = new WheelController(_settings, _tools, jobs, _input);
         jobs.PresetsChanged = _controller.Reload;
+        jobs.FindOperation = id => _controller.AllOperations.FirstOrDefault(o => o.Id == id);
         Ocr.OcrOperation.CopyToClipboard = text => Dispatcher.BeginInvoke(() =>
         {
             try
@@ -149,8 +150,10 @@ internal sealed class App : Application
         if (args.Contains("--settings"))
             OpenSettings();
         var wheelIndex = Array.IndexOf(args, "--wheel");
+        var menuIndex = Array.IndexOf(args, "--menu");
+        var wheel = menuIndex >= 0 && menuIndex + 1 < args.Length ? ShellIntegration.WheelFromArg(args[menuIndex + 1]) : null;
         if (wheelIndex >= 0)
-            _controller.QueuePaths(args.Skip(wheelIndex + 1).Where(a => !a.StartsWith("--", StringComparison.Ordinal)));
+            _controller.QueuePaths(args.Skip(wheelIndex + 1).Where(a => !a.StartsWith("--", StringComparison.Ordinal)), wheel ?? WheelKind.Convert);
     }
 
     private void OpenSettings() => SettingsWindow.ShowSingle(_settings, _tools, OnSettingsChanged);
@@ -166,6 +169,8 @@ internal sealed class App : Application
         _watcher?.Apply();
         if (relocalized)
         {
+            // The Explorer submenu labels are stored in the registry in the old language.
+            ShellIntegration.Refresh();
             _tray?.Dispose();
             _tray = CreateTray();
         }

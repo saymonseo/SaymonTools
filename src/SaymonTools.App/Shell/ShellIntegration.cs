@@ -30,30 +30,52 @@ internal static class ShellIntegration
             key.DeleteValue(ValueName, throwOnMissingValue: false);
     }
 
+    /// <summary>The submenu entries, one per wheel; the key names keep them in this order.</summary>
+    private static readonly (string Key, Core.WheelKind Wheel, string Arg)[] MenuEntries =
+    [
+        ("1convert", Core.WheelKind.Convert, "convert"),
+        ("2tools", Core.WheelKind.Tools, "tools"),
+        ("3actions", Core.WheelKind.Actions, "actions"),
+    ];
+
+    /// <summary>The wheel named by <c>--menu convert|tools|actions</c>.</summary>
+    public static Core.WheelKind? WheelFromArg(string? arg) =>
+        MenuEntries.FirstOrDefault(e => e.Arg == arg) is { Arg: not null } entry ? entry.Wheel : null;
+
     public static bool IsContextMenuEnabled
     {
         get
         {
-            using var key = Registry.CurrentUser.OpenSubKey(MenuRoots[0] + @"\command");
+            using var key = Registry.CurrentUser.OpenSubKey($@"{MenuRoots[0]}\shell\{MenuEntries[0].Key}\command");
             return key?.GetValue(null) is string value && value.Contains(Exe, StringComparison.OrdinalIgnoreCase);
         }
     }
 
+    /// <summary>
+    /// "SaymonTools ▸ Convert / Tools / Actions" on files and folders, each opening that wheel.
+    /// Rewritten from scratch, so older single-entry versions and stale labels go away.
+    /// </summary>
     public static void SetContextMenu(bool enabled)
     {
         foreach (var root in MenuRoots)
         {
+            Registry.CurrentUser.DeleteSubKeyTree(root, throwOnMissingSubKey: false);
             if (!enabled)
-            {
-                Registry.CurrentUser.DeleteSubKeyTree(root, throwOnMissingSubKey: false);
                 continue;
-            }
             using var key = Registry.CurrentUser.CreateSubKey(root);
-            key.SetValue(null, "SaymonTools…");
+            key.SetValue("MUIVerb", "SaymonTools");
             key.SetValue("Icon", $"\"{Exe}\",0");
-            key.SetValue("MultiSelectModel", "Player");
-            using var command = key.CreateSubKey("command");
-            command.SetValue(null, $"\"{Exe}\" --wheel \"%1\"");
+            // An empty SubCommands makes Explorer show the "shell" subkeys as a submenu.
+            key.SetValue("SubCommands", "");
+            foreach (var (name, wheel, arg) in MenuEntries)
+            {
+                using var entry = key.CreateSubKey($@"shell\{name}");
+                entry.SetValue("MUIVerb", AppSettings.WheelName(wheel) + "…");
+                entry.SetValue("Icon", $"\"{Exe}\",0");
+                entry.SetValue("MultiSelectModel", "Player");
+                using var command = entry.CreateSubKey("command");
+                command.SetValue(null, $"\"{Exe}\" --menu {arg} --wheel \"%1\"");
+            }
         }
     }
 

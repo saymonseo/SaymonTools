@@ -235,3 +235,38 @@ public sealed class CustomVideoIntegrationTests : IDisposable
         Assert.InRange(new FileInfo(output).Length, 1, (long)(2 * 1024 * 1024 * 1.15));
     }
 }
+
+public class QuickSettingsTests
+{
+    [Theory]
+    [InlineData("video.to.mkv")]
+    [InlineData("video.compress")]
+    [InlineData("video.720p")]
+    [InlineData("video.mute")]
+    [InlineData("image.to.webp")]
+    [InlineData("image.compress")]
+    [InlineData("image.half")]
+    public void Video_and_image_slices_open_the_settings_window(string id)
+    {
+        Assert.True(QuickSettings.Has(id));
+        // Every such slice exists on the wheels, so the window always opens for something real.
+        Assert.Contains(Catalog.Build(), o => o.Id == id);
+    }
+
+    [Fact]
+    public void The_window_starts_with_what_the_slice_does()
+    {
+        Assert.Equal("mkv", QuickSettings.Video("video.to.mkv")!.Format);
+        Assert.Equal(SoundMode.Remove, QuickSettings.Video("video.mute")!.Sound);
+        Assert.Equal(720, QuickSettings.Video("video.720p")!.Height);
+        Assert.Equal("webp", QuickSettings.Image("image.to.webp")!.Format);
+        Assert.Equal((ImageResize.Percent, 50), (QuickSettings.Image("image.half")!.Resize, QuickSettings.Image("image.half")!.Percent));
+    }
+
+    [Theory]
+    [InlineData("video.to.gif")]
+    [InlineData("video.trim")]
+    [InlineData("image.to.ico")]
+    [InlineData("pdf.merge")]
+    public void Other_slices_run_right_away(string id) => Assert.False(QuickSettings.Has(id));
+}
