@@ -56,7 +56,8 @@ public sealed class AppSettings
 
     public Dictionary<string, string>? LastParameters { get; set; }
 
-    public bool CheckForUpdates { get; set; } = false;
+    /// <summary>Look for new releases on GitHub (a minute after start, then every 12 hours).</summary>
+    public bool CheckForUpdates { get; set; } = true;
 
     /// <summary>Slices the user put together (e.g. "JPG 70 %"); they appear on the wheels like the built-in ones.</summary>
     public List<Preset> Presets { get; set; } = [];

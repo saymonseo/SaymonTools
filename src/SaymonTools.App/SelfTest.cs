@@ -27,10 +27,10 @@ internal static class SelfTest
             _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             JobCard.Animate = false;
             Check(Enum.GetValues<Language>().Length == 2, "only English and Russian languages");
-            var disabledUpdater = new Shell.Updater();
-            Check(disabledUpdater.CheckAsync().GetAwaiter().GetResult() is null && disabledUpdater.LastChecked is null, "updates disabled");
+            // No network here: only what the build itself decides (version from build.ps1, not installed).
+            Check(Shell.Updater.Current >= new Version(1, 0, 0) && !Shell.Updater.IsInstalled, "update version and portable copy");
             Check(Brand.Name == "SaymonTools", "product name");
-            log.Add("ok SaymonTools branding, languages and disabled updates");
+            log.Add($"ok SaymonTools {Shell.Updater.Current} branding, languages and updater");
             TestBundledPandoc(outDir, log);
             foreach (var (language, dark, folder) in new[] { (Language.English, true, "en"), (Language.English, false, "en-light"), (Language.Russian, true, "ru"), (Language.Russian, false, "ru-light") })
             {
@@ -42,7 +42,7 @@ internal static class SelfTest
 
             log.AddRange(SmokeTest.Run(Path.Combine(outDir, "smoke")));
             // Saved after every step, so a hard crash (which skips the catch below) still shows where it stopped.
-            foreach (var step in new Action[] { () => TestSettingsRoundTrip(log), () => TestExplorerCom(outDir, log), () => TestDrops(log), () => TestWatchFolder(outDir, log), () => TestOcr(outDir, log), () => log.Add("ok updates disabled: no network request") })
+            foreach (var step in new Action[] { () => TestSettingsRoundTrip(log), () => TestExplorerCom(outDir, log), () => TestDrops(log), () => TestWatchFolder(outDir, log), () => TestOcr(outDir, log), () => log.Add("ok no update request during the self-test") })
             {
                 File.WriteAllLines(Path.Combine(outDir, "self-test.txt"), log);
                 step();
@@ -207,7 +207,7 @@ internal static class SelfTest
         Check(back.Hotkey == HotkeyPreset.CtrlAltW && back.FavoriteOperations.Single() == "image.to.webp" && back.Language == Language.Russian, "settings JSON round trip");
         Check(json.Contains("\"CtrlAltW\""), "enums stored as names");
         Check(back.Appearance == AppAppearance.Light, "theme setting round trip");
-        Check(AppSettings.Folder.EndsWith("SaymonTools") && !new AppSettings().CheckForUpdates, "isolated settings and updates off by default");
+        Check(AppSettings.Folder.EndsWith("SaymonTools") && new AppSettings().CheckForUpdates, "isolated settings and update checks on by default");
         log.Add("ok settings json");
     }
 
