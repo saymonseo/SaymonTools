@@ -4,11 +4,39 @@
 
 Перетащите файл и нажмите **Shift** для конвертации, **Ctrl** для инструментов или **Alt** для действий. Отпустите файл над нужным сектором. Для работы без мыши выберите файлы в Проводнике и нажмите **Ctrl + Alt + Space**.
 
-## Запуск
+## Установка
 
-Распакуйте весь архив и запустите `SaymonTools.exe`. Программа находится в области уведомлений рядом с часами; двойной щелчок открывает настройки. Требуется Windows 10 (1809+) или Windows 11, x64. .NET включён в переносную сборку.
+Скачайте `SaymonTools-Setup-X.Y.Z.exe` со страницы [релизов](https://github.com/saymonseo/SaymonTools/releases/latest) и запустите. Программа ставится в `Program Files\SaymonTools` для всех пользователей (Windows спросит разрешение администратора), появляется в меню «Пуск» и удаляется через «Параметры → Приложения». Требуется Windows 10 (1809+) или Windows 11, x64. .NET включён в сборку.
 
-Настройки хранятся в `%APPDATA%\SaymonTools`, загружаемые инструменты — в `%LOCALAPPDATA%\SaymonTools\tools`. Скриншоты и виртуальные вложения сохраняются в `Downloads\SaymonTools`. Исходные файлы не перезаписываются.
+Установщик пока не подписан цифровой подписью, поэтому при первом запуске Windows SmartScreen может показать «Windows защитил ваш компьютер»: нажмите «Подробнее → Выполнить в любом случае».
+
+Есть и переносная версия `SaymonTools-X.Y.Z-win-x64.zip`: распакуйте архив целиком и запустите `SaymonTools.exe`.
+
+Программа находится в области уведомлений рядом с часами; двойной щелчок открывает настройки. Настройки хранятся в `%APPDATA%\SaymonTools`, загружаемые инструменты — в `%LOCALAPPDATA%\SaymonTools\tools`. Скриншоты и виртуальные вложения сохраняются в `Downloads\SaymonTools`. Исходные файлы не перезаписываются.
+
+## Обновления
+
+Установленная программа сама проверяет [релизы на GitHub](https://github.com/saymonseo/SaymonTools/releases) через минуту после запуска и затем каждые 12 часов. Когда выходит новая версия, в трее появляется уведомление и пункт «Обновить до версии…». Установщик скачивается, его контрольная сумма SHA-256 сверяется с опубликованной на GitHub, Windows один раз спрашивает разрешение (UAC), программа закрывается, обновляется и запускается снова. Проверку можно выключить или запустить вручную: Настройки → О приложении. Переносная версия при обновлении открывает страницу загрузки.
+
+### Как выпустить обновление
+
+1. Поменяйте `<Version>` в `src/SaymonTools.App/SaymonTools.App.csproj` (например, `1.2.0`) и закоммитьте.
+2. Создайте и отправьте тег с той же версией:
+
+   ```powershell
+   git tag v1.2.0
+   git push origin v1.2.0
+   ```
+
+3. GitHub Actions (`.github/workflows/release.yml`) прогонит тесты, соберёт установщик и ZIP и опубликует релиз. Установленные копии получат обновление при следующей проверке.
+
+Без GitHub Actions то же самое делается вручную (нужен Inno Setup 6: `winget install JRSoftware.InnoSetup`):
+
+```powershell
+./build.ps1 -Version 1.2.0
+./scripts/package.ps1 -Version 1.2.0
+gh release create v1.2.0 artifacts/SaymonTools-Setup-1.2.0.exe artifacts/SaymonTools-1.2.0-win-x64.zip --title "SaymonTools 1.2.0" --generate-notes
+```
 
 ## Форматы
 
@@ -26,6 +54,7 @@
 ./build.ps1
 dotnet test tests/SaymonTools.Tests -c Release
 ./publish/SaymonTools.exe --self-test ./self-test
+./scripts/package.ps1   # установщик и ZIP в artifacts/ (нужен Inno Setup 6: winget install JRSoftware.InnoSetup)
 ```
 
 ## Лицензия

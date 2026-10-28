@@ -1,0 +1,45 @@
+# Publishing an update: set <Version> in src/SaymonTools.App/SaymonTools.App.csproj (optional),
+# then push a tag:  git tag v1.2.0 && git push origin v1.2.0
+# Installed copies find the new release through the GitHub API and update themselves.
+name: SaymonTools release
+on:
+  push:
+    tags: ['v*.*.*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Version from the tag
+        id: version
+        shell: pwsh
+        run: |
+          $v = '${{ github.ref_name }}'.TrimStart('v')
+          if ($v -notmatch '^\d+\.\d+\.\d+$') { throw "Tag must look like v1.2.3, got ${{ github.ref_name }}" }
+          "value=$v" >> $env:GITHUB_OUTPUT
+      - name: Test
+        run: dotnet test tests/SaymonTools.Tests -c Release
+      - name: Build
+        shell: pwsh
+        run: ./build.ps1 -Version ${{ steps.version.outputs.value }}
+      - name: Verify packaged app
+        shell: pwsh
+        run: |
+          $p = Start-Process ./publish/SaymonTools.exe -ArgumentList '--self-test', './self-test' -PassThru -Wait
+          Get-Content ./self-test/self-test.txt
+          if ($p.ExitCode -ne 0) { throw 'SaymonTools self-test failed' }
+      - name: Installer and ZIP
+        shell: pwsh
+        run: ./scripts/package.ps1 -Version ${{ steps.version.outputs.value }}
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = '${{ steps.version.outputs.value }}'
+          gh release create '${{ github.ref_name }}' "artifacts/SaymonTools-Setup-$v.exe" "artifacts/SaymonTools-$v-win-x64.zip" --title "SaymonTools $v" --generate-notes
