@@ -31,6 +31,17 @@ public static class Catalog
 
     private static void AddImages(List<Operation> ops)
     {
+        // Every setting at once (size, quality, file size…); the app asks for them in its own window.
+        ops.Add(new PerFileOperation(ImageSettings.OperationId, WheelKind.Convert, T("Custom…", "Настроить…"), Glyphs.Equalizer, Formats.Images,
+            async (item, ctx, _) =>
+            {
+                var settings = ImageSettings.FromParameters(ctx.Parameters);
+                var format = settings.OutputFor(item.Format);
+                var name = settings.Suffix() is { } suffix ? $"{item.BaseName} ({suffix})" : item.BaseName;
+                return [await OutputPaths.ProduceAsync(ctx.OutputDirFor(item.Path), name, format,
+                    tmp => ImageBackend.CustomAsync(item.Path, tmp, settings, ctx.CancellationToken))];
+            }, subtitle: T("size, quality", "размер, качество"))
+        { MaxParallelism = PerFileOperation.CpuParallelism });
         foreach (var target in Formats.ImageOutputs)
         {
             ops.Add(new PerFileOperation($"image.to.{target}", WheelKind.Convert, Formats.Display(target), Glyphs.Photo, Formats.Images,
@@ -105,6 +116,11 @@ public static class Catalog
 
     private static void AddVideo(List<Operation> ops)
     {
+        // Every setting at once (size, quality, codec, sound…); the app asks for them in its own window.
+        ops.Add(new PerFileOperation(VideoSettings.OperationId, WheelKind.Convert, T("Custom…", "Настроить…"), Glyphs.Equalizer, Formats.Video,
+            async (item, ctx, p) => [await FfmpegBackend.CustomAsync(item, VideoSettings.FromParameters(ctx.Parameters), ctx, p)],
+            subtitle: T("size, quality, sound", "размер, качество, звук"))
+        { Requires = [ExternalTool.Ffmpeg] });
         foreach (var target in Formats.VideoOutputs)
         {
             ops.Add(new PerFileOperation($"video.to.{target}", WheelKind.Convert, Formats.Display(target), target == "mp3" ? Glyphs.Audio : Glyphs.Video, Formats.Video,

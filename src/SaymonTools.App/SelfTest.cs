@@ -137,6 +137,17 @@ internal static class SelfTest
         uploaded.Close();
         log.Add($"ok {Path.GetFileName(outDir)}/upload-link");
 
+        var videoOptions = new CustomOptionsDialog(true, [new FileItem(N(@"C:\Видео\клип 4K.mp4", @"C:\Videos\clip 4K.mp4"))],
+            new Core.Backends.VideoSettings { Height = 1080, Sound = Core.Backends.SoundMode.Remove }, null, tools);
+        SaveWindow(videoOptions, Path.Combine(outDir, "custom-video.png"), 700);
+        Check(videoOptions.Parameters["height"] == "1080" && videoOptions.Parameters["sound"] == "Remove", "custom video parameters");
+        videoOptions.Close();
+        var imageOptions = new CustomOptionsDialog(false, [new FileItem(N(@"C:\Фото\отпуск.jpg", @"C:\Photos\vacation.jpg"))], null,
+            new Core.Backends.ImageSettings { Resize = Core.Backends.ImageResize.Exact, Width = 1080, Height = 1080, TargetKb = 500, StripMetadata = true }, tools);
+        SaveWindow(imageOptions, Path.Combine(outDir, "custom-image.png"), 700);
+        imageOptions.Close();
+        log.Add($"ok {Path.GetFileName(outDir)}/custom options");
+
         SettingsWindow.Operations = () => [.. core, .. actions];
         settings.FavoriteOperations = ["image.to.webp", "image.compress"];
         settings.HiddenOperations = ["image.to.tiff"];
@@ -208,6 +219,9 @@ internal static class SelfTest
         Check(json.Contains("\"CtrlAltW\""), "enums stored as names");
         Check(back.Appearance == AppAppearance.Light, "theme setting round trip");
         Check(AppSettings.Folder.EndsWith("SaymonTools") && !new AppSettings().CheckForUpdates, "isolated settings and updates off by default");
+        // The trimmed build has reflection-based JSON switched off; the undo journal must not depend on it.
+        var journal = new Core.Rename.RenameJournal([new Core.Rename.RenameMove(@"C:\a.txt", @"C:\b.txt")]);
+        Check(Core.Rename.RenameJournal.FromJson(journal.ToJson())?.Moves.SingleOrDefault()?.To == @"C:\b.txt", "rename undo journal json");
         log.Add("ok settings json");
     }
 

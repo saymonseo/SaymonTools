@@ -2,6 +2,7 @@ using SaymonTools.App.Actions;
 using SaymonTools.App.Shell;
 using SaymonTools.App.UI;
 using SaymonTools.Core;
+using SaymonTools.Core.Backends;
 using SaymonTools.Core.Operations;
 using static SaymonTools.Core.Loc;
 
@@ -62,6 +63,12 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
                 return;
             parameters = dialog.Values;
         }
+        if (parameters.Count == 0 && CustomOptionsDialog.Handles(op.Id))
+        {
+            if (AskCustomOptions(op.Id == VideoSettings.OperationId, items) is not { } chosen)
+                return;
+            parameters = chosen;
+        }
         if (!automatic)
             Remember(op, parameters);
 
@@ -105,6 +112,41 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
         {
             card.Fail(Friendly(ex));
         }
+    }
+
+    /// <summary>Called after a preset was added from the "Custom…" window, so the wheels pick it up.</summary>
+    public Action? PresetsChanged { get; set; }
+
+    /// <summary>The "Custom…" window for video or images; null when cancelled.</summary>
+    private IReadOnlyDictionary<string, string>? AskCustomOptions(bool video, IReadOnlyList<FileItem> items)
+    {
+        // A background app's dialog opens behind Explorer without a foreground owner.
+        var owner = ForegroundHelper.Host();
+        CustomOptionsDialog dialog;
+        try
+        {
+            dialog = new CustomOptionsDialog(video, items, settings.LastVideo, settings.LastImage, tools) { Owner = owner };
+            if (dialog.ShowDialog() != true)
+                return null;
+        }
+        finally
+        {
+            owner.Close();
+        }
+        if (video)
+            settings.LastVideo = dialog.VideoResult;
+        else
+            settings.LastImage = dialog.ImageResult;
+        if (dialog.PresetName is { } name)
+        {
+            settings.Presets.Add(video
+                ? new Preset { Name = name, Kind = PresetKind.Video, Format = dialog.VideoResult.Format, Video = dialog.VideoResult }
+                : new Preset { Name = name, Kind = PresetKind.Image, Format = dialog.ImageResult.Format, Image = dialog.ImageResult });
+        }
+        settings.Save();
+        if (dialog.PresetName is not null)
+            PresetsChanged?.Invoke();
+        return dialog.Parameters;
     }
 
     /// <summary>A finished card for work done in the app itself (no progress), with one follow-up button.</summary>

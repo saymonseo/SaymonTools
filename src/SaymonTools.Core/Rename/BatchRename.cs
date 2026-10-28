@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using SaymonTools.Core.Operations;
 using static SaymonTools.Core.Loc;
@@ -70,13 +71,13 @@ public sealed record RenameMove(string From, string To);
 /// <summary>What a rename did, so it can be undone.</summary>
 public sealed record RenameJournal(IReadOnlyList<RenameMove> Moves)
 {
-    public string ToJson() => JsonSerializer.Serialize(Moves.Select(m => new[] { m.From, m.To }));
+    public string ToJson() => JsonSerializer.Serialize(Moves.Select(m => new[] { m.From, m.To }).ToArray(), RenameJson.Default.StringArrayArray);
 
     public static RenameJournal? FromJson(string json)
     {
         try
         {
-            var pairs = JsonSerializer.Deserialize<string[][]>(json);
+            var pairs = JsonSerializer.Deserialize(json, RenameJson.Default.StringArrayArray);
             return pairs is null ? null : new RenameJournal([.. pairs.Where(p => p.Length == 2).Select(p => new RenameMove(p[0], p[1]))]);
         }
         catch (JsonException)
@@ -85,6 +86,10 @@ public sealed record RenameJournal(IReadOnlyList<RenameMove> Moves)
         }
     }
 }
+
+/// <summary>Source-generated JSON: the trimmed app has reflection-based serialization switched off.</summary>
+[JsonSerializable(typeof(string[][]))]
+internal sealed partial class RenameJson : JsonSerializerContext;
 
 /// <summary>Works out new names for a batch of files and renames them safely (and back).</summary>
 public static partial class BatchRename

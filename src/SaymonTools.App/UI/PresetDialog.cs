@@ -58,6 +58,8 @@ internal sealed class PresetDialog : Window
         VideoQuality = p.VideoQuality,
         Mute = p.Mute,
         Bitrate = p.Bitrate,
+        Video = p.Video,
+        Image = p.Image,
     };
 
     private void Build()
@@ -90,6 +92,14 @@ internal sealed class PresetDialog : Window
                 Rebuild();
             })));
 
+        if (Advanced)
+        {
+            AdvancedOptions(root);
+            Buttons(root);
+            _scroll.Content = root;
+            return;
+        }
+
         root.Children.Add(FieldLabel(T("Output format", "Выходной формат")));
         root.Children.Add(AlignLeft(Segmented(
             [.. PresetOperations.FormatsFor(_preset.Kind).Select(f => (f == Preset.SameFormat ? T("Same", "Тот же") : Formats.Display(f), f))],
@@ -113,7 +123,63 @@ internal sealed class PresetDialog : Window
                 break;
         }
 
-        var wheel = _preset.Format == Preset.SameFormat ? AppSettings.WheelName(WheelKind.Tools) : AppSettings.WheelName(WheelKind.Convert);
+        if (_preset.Kind != PresetKind.Audio)
+        {
+            var more = Button(T("All settings…", "Все настройки…"), EditAdvanced, glyph: Glyphs.Equalizer);
+            more.Margin = new Thickness(0, 18, 0, 0);
+            root.Children.Add(more);
+            root.Children.Add(Hint(_preset.Kind == PresetKind.Video
+                ? T("Codec, frame rate, file size, encoding speed and more.", "Кодек, частота кадров, размер файла, скорость кодирования и другое.")
+                : T("Exact size with cropping, file size limit and more.", "Точный размер с обрезкой, ограничение размера файла и другое.")));
+        }
+        Buttons(root);
+        _scroll.Content = root;
+    }
+
+    /// <summary>The preset keeps the full "Custom…" settings (codec, file size…), edited in that window.</summary>
+    private bool Advanced => (_preset.Kind == PresetKind.Video && _preset.Video is not null) || (_preset.Kind == PresetKind.Image && _preset.Image is not null);
+
+    private void AdvancedOptions(Panel root)
+    {
+        root.Children.Add(FieldLabel(T("Settings", "Настройки")));
+        root.Children.Add(Card(PresetOperations.Summary(_preset), T("Set in the full settings window.", "Задаются в окне всех настроек."),
+            Button(T("Change…", "Изменить…"), EditAdvanced, glyph: Glyphs.Equalizer), glyph: Glyphs.Equalizer));
+        var simple = Button(T("Back to simple settings", "Вернуться к простым настройкам"), () =>
+        {
+            _preset.Video = null;
+            _preset.Image = null;
+            Rebuild();
+        });
+        simple.Margin = new Thickness(0, 10, 0, 0);
+        root.Children.Add(simple);
+    }
+
+    /// <summary>Opens the full settings window, starting from the preset's current (simple or full) settings.</summary>
+    private void EditAdvanced()
+    {
+        var video = _preset.Kind == PresetKind.Video;
+        var dialog = new CustomOptionsDialog(video, [],
+            video ? PresetOperations.ToVideoSettings(_preset) : null,
+            video ? null : PresetOperations.ToImageSettings(_preset),
+            new ToolLocator(), presetMode: true) { Owner = this };
+        if (dialog.ShowDialog() != true)
+            return;
+        if (video)
+        {
+            _preset.Video = dialog.VideoResult;
+            _preset.Format = dialog.VideoResult.Format;
+        }
+        else
+        {
+            _preset.Image = dialog.ImageResult;
+            _preset.Format = dialog.ImageResult.Format;
+        }
+        Rebuild();
+    }
+
+    private void Buttons(Panel root)
+    {
+        var wheel = AppSettings.WheelName(PresetOperations.Build(_preset).Wheel);
         var summary = Text(T($"{wheel} wheel · {PresetOperations.Summary(_preset)}", $"Меню «{wheel}» · {PresetOperations.Summary(_preset)}"), 13, brush: Theme.Muted);
         summary.Margin = new Thickness(0, 22, 0, 0);
         root.Children.Add(summary);
@@ -125,7 +191,6 @@ internal sealed class PresetDialog : Window
         buttons.Children.Add(save);
         buttons.Children.Add(cancel);
         root.Children.Add(buttons);
-        _scroll.Content = root;
     }
 
     private void Rebuild()

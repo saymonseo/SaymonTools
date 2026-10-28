@@ -84,6 +84,7 @@ internal sealed class App : Application
         }
 
         _controller = new WheelController(_settings, _tools, jobs, _input);
+        jobs.PresetsChanged = _controller.Reload;
         Ocr.OcrOperation.CopyToClipboard = text => Dispatcher.BeginInvoke(() =>
         {
             try

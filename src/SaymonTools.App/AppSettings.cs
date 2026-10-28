@@ -73,6 +73,12 @@ public sealed class AppSettings
     /// <summary>The user confirmed once that uploaded files are public to anyone with the link.</summary>
     public bool UploadConsent { get; set; }
 
+    /// <summary>"Custom…" video settings from last time (the window starts from them).</summary>
+    public Core.Backends.VideoSettings? LastVideo { get; set; }
+
+    /// <summary>"Custom…" image settings from last time (the window starts from them).</summary>
+    public Core.Backends.ImageSettings? LastImage { get; set; }
+
     /// <summary>Batch rename settings from last time (the dialog starts from them).</summary>
     public Core.Rename.RenameOptions? LastRename { get; set; }
 

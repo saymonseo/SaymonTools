@@ -141,6 +141,110 @@ public static class ImageBackend
             image.Write(output, ToMagickFormat(format));
         }, ct);
 
+    /// <summary>Width and height without decoding the pixels; null when the file can't be read.</summary>
+    public static (int Width, int Height)? Dimensions(string path)
+    {
+        try
+        {
+            using var image = new MagickImage();
+            image.Ping(path);
+            // Phone photos are often stored sideways with an EXIF hint; report them the way they are shown.
+            // EXIF orientation 5–8 means rotated by 90° or 270°.
+            var sideways = image.GetExifProfile()?.GetValue(ExifTag.Orientation)?.Value is >= 5 and <= 8;
+            return sideways ? ((int)image.Height, (int)image.Width) : ((int)image.Width, (int)image.Height);
+        }
+        catch (MagickException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The "Custom…" conversion: size, grayscale, metadata, then quality or a target file size.</summary>
+    public static Task CustomAsync(string input, string output, ImageSettings s, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            using var image = Load(input);
+            switch (s.Resize)
+            {
+                case ImageResize.LongSide:
+                    ResizeMax(image, (uint)s.LongSide);
+                    break;
+                case ImageResize.Percent when s.Percent != 100:
+                    ResizePercent(image, s.Percent);
+                    break;
+                case ImageResize.Exact when s.Crop:
+                    // Cover the frame, then cut the overhang evenly from both sides.
+                    image.Resize(new MagickGeometry((uint)s.Width, (uint)s.Height) { FillArea = true });
+                    image.Crop((uint)s.Width, (uint)s.Height, Gravity.Center);
+                    image.ResetPage();
+                    break;
+                case ImageResize.Exact:
+                    image.Resize(new MagickGeometry((uint)s.Width, (uint)s.Height));
+                    break;
+            }
+            if (s.Grayscale)
+                Grayscale(image);
+            if (s.StripMetadata)
+                image.Strip();
+            ct.ThrowIfCancellationRequested();
+
+            var format = s.OutputFor(Formats.KeyOf(input));
+            if (s.TargetKb is { } kb && ImageSettings.IsLossy(format))
+            {
+                File.WriteAllBytes(output, FitToSize(image, format, kb * 1024L, s.Quality, ct));
+                return;
+            }
+            PrepareFor(image, format, s.Quality);
+            image.Write(output, ToMagickFormat(format));
+        }, ct);
+
+    /// <summary>
+    /// The best quality (at most <paramref name="maxQuality"/>) that fits in <paramref name="maxBytes"/>;
+    /// if even low quality is too big, the picture is made smaller step by step.
+    /// </summary>
+    internal static byte[] FitToSize(MagickImage image, string format, long maxBytes, int maxQuality, CancellationToken ct)
+    {
+        var magick = ToMagickFormat(format);
+        byte[] Encode(MagickImage img, int quality)
+        {
+            ct.ThrowIfCancellationRequested();
+            PrepareFor(img, format, quality);
+            return img.ToByteArray(magick);
+        }
+
+        var current = (MagickImage)image.Clone();
+        try
+        {
+            for (var shrink = 0; shrink < 8; shrink++)
+            {
+                byte[]? best = null;
+                int low = 10, high = Math.Clamp(maxQuality, 10, 100);
+                while (low <= high)
+                {
+                    var mid = (low + high) / 2;
+                    var bytes = Encode(current, mid);
+                    if (bytes.LongLength <= maxBytes)
+                    {
+                        best = bytes;
+                        low = mid + 1;
+                    }
+                    else
+                    {
+                        high = mid - 1;
+                    }
+                }
+                if (best is not null)
+                    return best;
+                current.Resize(new Percentage(80));
+            }
+            throw new ConversionException(T("Couldn't make the picture that small.", "Не удалось сжать изображение до такого размера."));
+        }
+        finally
+        {
+            current.Dispose();
+        }
+    }
+
     public static Task ImagesToPdfAsync(IReadOnlyList<string> inputs, string output, int quality, CancellationToken ct) =>
         Task.Run(() =>
         {

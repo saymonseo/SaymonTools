@@ -90,6 +90,70 @@ public static partial class FfmpegBackend
         }
     }
 
+    [GeneratedRegex(@"Stream #\d+:\d+.*?: Video: .*?\b(\d{2,5})x(\d{2,5})\b")]
+    private static partial Regex VideoStreamRegex();
+
+    [GeneratedRegex(@"\b(\d+(?:\.\d+)?) fps\b")]
+    private static partial Regex FpsRegex();
+
+    [GeneratedRegex(@"Stream #\d+:\d+.*?: Audio:")]
+    private static partial Regex AudioStreamRegex();
+
+    /// <summary>Size, length, frame rate and streams of a media file, from ffmpeg's own report; null if it can't read it.</summary>
+    public static async Task<MediaInfo?> ProbeAsync(string ffmpeg, string path, CancellationToken ct)
+    {
+        var lines = new List<string>();
+        try
+        {
+            // Without an output ffmpeg describes the input and exits with an error; that's expected here.
+            await ProcessRunner.RunAsync(ffmpeg, ["-hide_banner", "-nostdin", "-i", path], ct, line =>
+            {
+                lock (lines)
+                    lines.Add(line);
+            }).ConfigureAwait(false);
+        }
+        catch (ConversionException)
+        {
+        }
+        return ParseProbe(lines);
+    }
+
+    /// <summary>Reads ffmpeg's input description (see <see cref="ProbeAsync"/>).</summary>
+    public static MediaInfo? ParseProbe(IEnumerable<string> lines)
+    {
+        double? duration = null, fps = null;
+        int? width = null, height = null;
+        bool video = false, audio = false;
+        foreach (var line in lines)
+        {
+            if (duration is null && DurationRegex().Match(line) is { Success: true } d)
+                duration = Seconds(d);
+            if (!video && VideoStreamRegex().Match(line) is { Success: true } v)
+            {
+                video = true;
+                width = int.Parse(v.Groups[1].Value, CultureInfo.InvariantCulture);
+                height = int.Parse(v.Groups[2].Value, CultureInfo.InvariantCulture);
+                if (FpsRegex().Match(line) is { Success: true } f)
+                    fps = double.Parse(f.Groups[1].Value, CultureInfo.InvariantCulture);
+            }
+            if (AudioStreamRegex().IsMatch(line))
+                audio = true;
+        }
+        return duration is null && !video && !audio ? null : new MediaInfo(duration, width, height, fps, video, audio);
+    }
+
+    /// <summary>The "Custom…" conversion: re-encodes with <see cref="VideoSettings"/> from the operation's parameters.</summary>
+    /// <param name="suffix">Added to the output name; by default it says what changed ("1080p, no sound").</param>
+    public static async Task<string> CustomAsync(FileItem item, VideoSettings settings, OperationContext ctx, IProgress<double> progress, string? suffix = null)
+    {
+        var info = await ProbeAsync(ctx.Tools.Require(ExternalTool.Ffmpeg), item.Path, ctx.CancellationToken).ConfigureAwait(false);
+        if (info is { HasVideo: false })
+            throw new ConversionException(T("The file has no video track.", "В файле нет видеодорожки."));
+        var args = settings.Args(info?.Duration, info?.Fps);
+        return await OutputPaths.ProduceAsync(ctx.OutputDirFor(item.Path), $"{item.BaseName} ({suffix ?? settings.Suffix()})", settings.Format, tmp =>
+            RunAsync(ctx, [item.Path], args, tmp, progress, knownDuration: info?.Duration)).ConfigureAwait(false);
+    }
+
     private static double Seconds(Match m) =>
         int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) * 3600
         + int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture) * 60

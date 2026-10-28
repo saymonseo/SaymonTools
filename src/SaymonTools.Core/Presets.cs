@@ -54,6 +54,12 @@ public sealed class Preset
 
     /// <summary>Audio: bitrate in kbit/s for lossy formats.</summary>
     public int Bitrate { get; set; } = 192;
+
+    /// <summary>Video: every setting from the "Custom…" window; when set it replaces the simple video fields.</summary>
+    public VideoSettings? Video { get; set; }
+
+    /// <summary>Images: every setting from the "Custom…" window; when set it replaces the simple image fields.</summary>
+    public ImageSettings? Image { get; set; }
 }
 
 public static class PresetOperations
@@ -74,6 +80,10 @@ public static class PresetOperations
     /// <summary>One line describing what the preset does, e.g. "JPG · 70 % · max 1920 px".</summary>
     public static string Summary(Preset p)
     {
+        if (p.Kind == PresetKind.Video && p.Video is { } video)
+            return video.Summary();
+        if (p.Kind == PresetKind.Image && p.Image is { } image)
+            return image.Summary();
         var parts = new List<string> { p.Format == Preset.SameFormat ? T("same format", "тот же формат") : Formats.Display(p.Format) };
         switch (p.Kind)
         {
@@ -108,12 +118,48 @@ public static class PresetOperations
         return string.Join(" · ", parts);
     }
 
+    /// <summary>The full video settings a simple video preset stands for.</summary>
+    public static VideoSettings ToVideoSettings(Preset p) => p.Video ?? new VideoSettings
+    {
+        Format = VideoSettings.Containers.Contains(p.Format) ? p.Format : "mp4",
+        Height = p.Height,
+        Quality = p.VideoQuality switch { VideoQuality.High => VideoLevel.High, VideoQuality.Small => VideoLevel.Small, _ => VideoLevel.Medium },
+        Sound = p.Mute ? SoundMode.Remove : SoundMode.Keep,
+    };
+
+    /// <summary>The full image settings a simple image preset stands for.</summary>
+    public static ImageSettings ToImageSettings(Preset p) => p.Image ?? new ImageSettings
+    {
+        Format = ImageSettings.OutputFormats.Contains(p.Format) ? p.Format : ImageSettings.SameFormat,
+        Resize = p.MaxSide is not null ? ImageResize.LongSide : p.Percent is not null ? ImageResize.Percent : ImageResize.Original,
+        LongSide = p.MaxSide ?? 1920,
+        Percent = p.Percent ?? 50,
+        Quality = p.Quality,
+        Grayscale = p.Grayscale,
+        StripMetadata = p.StripMetadata,
+    };
+
     /// <summary>The wheel slice for a preset: format changes go on Convert, same-format edits on Tools.</summary>
     public static Operation Build(Preset p)
     {
         var name = string.IsNullOrWhiteSpace(p.Name) ? Summary(p) : p.Name.Trim();
         var wheel = p.Format == Preset.SameFormat ? WheelKind.Tools : WheelKind.Convert;
         var suffix = SafeSuffix(name);
+        if (p.Kind == PresetKind.Image && p.Image is { } image)
+        {
+            return new PerFileOperation("preset." + p.Id, image.Format == ImageSettings.SameFormat ? WheelKind.Tools : WheelKind.Convert, name, Glyphs.Photo, Formats.Images,
+                async (item, ctx, _) => [await OutputPaths.ProduceAsync(ctx.OutputDirFor(item.Path), $"{item.BaseName} ({suffix})", image.OutputFor(item.Format),
+                    tmp => ImageBackend.CustomAsync(item.Path, tmp, image, ctx.CancellationToken))],
+                subtitle: Summary(p))
+            { MaxParallelism = PerFileOperation.CpuParallelism };
+        }
+        if (p.Kind == PresetKind.Video && p.Video is { } video)
+        {
+            return new PerFileOperation("preset." + p.Id, WheelKind.Convert, name, Glyphs.Video, Formats.Video,
+                async (item, ctx, progress) => [await FfmpegBackend.CustomAsync(item, video, ctx, progress, suffix)],
+                subtitle: Summary(p))
+            { Requires = [ExternalTool.Ffmpeg] };
+        }
         return p.Kind switch
         {
             PresetKind.Image => new PerFileOperation("preset." + p.Id, wheel, name, Glyphs.Photo, Formats.Images,
