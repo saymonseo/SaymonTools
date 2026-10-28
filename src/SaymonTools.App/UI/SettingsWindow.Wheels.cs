@@ -130,7 +130,7 @@ internal sealed partial class SettingsWindow
             Background = Theme.Card,
             BorderBrush = Theme.PanelBorder,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(14),
+            CornerRadius = Theme.CardCorners,
             Padding = new Thickness(10),
             Child = preview,
         });
@@ -151,7 +151,7 @@ internal sealed partial class SettingsWindow
             Background = Theme.Card,
             BorderBrush = Theme.PanelBorder,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(14),
+            CornerRadius = Theme.CardCorners,
             Padding = new Thickness(6, 4, 6, 4),
             Child = rows,
         });
@@ -172,9 +172,8 @@ internal sealed partial class SettingsWindow
     {
         var active = index == _group;
         var row = new DockPanel();
-        var badge = new Border
+        var badge = new PillBorder
         {
-            CornerRadius = new CornerRadius(9),
             MinWidth = 26,
             Padding = new Thickness(7, 1, 7, 2),
             Background = active ? Theme.AccentGradient : Theme.Track,
@@ -202,10 +201,9 @@ internal sealed partial class SettingsWindow
         DockPanel.SetDock(icon, Dock.Left);
         row.Children.Add(icon);
         row.Children.Add(Text(name, 14, active ? FontWeights.SemiBold : FontWeights.Normal, wrap: false));
-        var item = new Border
+        var item = new PillBorder
         {
             Background = active ? Theme.AccentSoft : Brushes.Transparent,
-            CornerRadius = new CornerRadius(9),
             Padding = new Thickness(12, 9, 10, 9),
             Margin = new Thickness(0, 0, 0, 2),
             Cursor = Cursors.Hand,

@@ -101,7 +101,7 @@ internal sealed class ShelfWindow : Window
             Background = Theme.Panel,
             BorderBrush = Theme.PanelBorder,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(14),
+            CornerRadius = new CornerRadius(20),
             Child = stack,
             Margin = new Thickness(14),
             Effect = Theme.Shadow(24),
@@ -190,7 +190,7 @@ internal sealed class ShelfWindow : Window
     private static Style ItemStyle()
     {
         var border = new FrameworkElementFactory(typeof(Border), "Row");
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(12));
         border.SetValue(Border.PaddingProperty, new Thickness(8, 5, 8, 5));
         border.SetValue(Border.BackgroundProperty, Brushes.Transparent);
         border.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));

@@ -10,36 +10,37 @@ namespace SaymonTools.App.UI;
 /// </summary>
 internal static class Theme
 {
+    // SaymonTools: deep graphite-violet surfaces with a violet → teal accent.
     private static readonly Palette DarkPalette = new(
-        Backdrop: Color.FromArgb(0xF2, 0x0C, 0x0C, 0x0F),
-        BackdropEdge: Color.FromArgb(0x38, 0xD8, 0x24, 0x40),
-        Slice: Color.FromRgb(0x20, 0x20, 0x25),
-        SliceEdge: Color.FromArgb(0x24, 0xFF, 0xFF, 0xFF),
-        Hub: Color.FromRgb(0x10, 0x10, 0x14),
-        Panel: Color.FromArgb(0xFC, 0x13, 0x13, 0x17),
-        PanelEdge: Color.FromArgb(0x25, 0xEF, 0x70, 0x7B),
-        Text: Color.FromRgb(0xFA, 0xF6, 0xF7),
-        Muted: Color.FromRgb(0xAA, 0x9D, 0xA3),
-        Track: Color.FromArgb(0x25, 0xFF, 0xFF, 0xFF),
-        Page: Color.FromRgb(0x0D, 0x0D, 0x11),
-        Card: Color.FromRgb(0x19, 0x18, 0x1E),
-        Hover: Color.FromArgb(0x1A, 0xFF, 0x30, 0x50),
+        Backdrop: Color.FromArgb(0xF0, 0x12, 0x10, 0x1C),
+        BackdropEdge: Color.FromArgb(0x55, 0x8B, 0x6C, 0xFF),
+        Slice: Color.FromRgb(0x1F, 0x1B, 0x2E),
+        SliceEdge: Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF),
+        Hub: Color.FromRgb(0x16, 0x13, 0x23),
+        Panel: Color.FromArgb(0xFC, 0x17, 0x14, 0x24),
+        PanelEdge: Color.FromArgb(0x33, 0x9B, 0x87, 0xFF),
+        Text: Color.FromRgb(0xF4, 0xF2, 0xFF),
+        Muted: Color.FromRgb(0xA4, 0x9F, 0xBE),
+        Track: Color.FromArgb(0x24, 0xFF, 0xFF, 0xFF),
+        Page: Color.FromRgb(0x0F, 0x0D, 0x18),
+        Card: Color.FromRgb(0x1A, 0x17, 0x28),
+        Hover: Color.FromArgb(0x1E, 0x8B, 0x6C, 0xFF),
         Shadow: 0.6);
 
     private static readonly Palette LightPalette = new(
-        Backdrop: Color.FromArgb(0xF5, 0xED, 0xF6, 0xFF),
-        BackdropEdge: Color.FromArgb(0x38, 0x2B, 0x78, 0xBC),
+        Backdrop: Color.FromArgb(0xF5, 0xF6, 0xF3, 0xFF),
+        BackdropEdge: Color.FromArgb(0x45, 0x6D, 0x4A, 0xFF),
         Slice: Color.FromRgb(0xFF, 0xFF, 0xFF),
-        SliceEdge: Color.FromArgb(0x26, 0x29, 0x6F, 0xAD),
-        Hub: Color.FromRgb(0xF4, 0xFA, 0xFF),
-        Panel: Color.FromArgb(0xFC, 0xF8, 0xFC, 0xFF),
-        PanelEdge: Color.FromArgb(0x28, 0x29, 0x6F, 0xAD),
-        Text: Color.FromRgb(0x15, 0x29, 0x40),
-        Muted: Color.FromRgb(0x55, 0x6D, 0x85),
-        Track: Color.FromArgb(0x24, 0x23, 0x70, 0xAF),
-        Page: Color.FromRgb(0xED, 0xF4, 0xFC),
+        SliceEdge: Color.FromArgb(0x22, 0x5B, 0x3F, 0xD9),
+        Hub: Color.FromRgb(0xF8, 0xF6, 0xFF),
+        Panel: Color.FromArgb(0xFC, 0xFC, 0xFB, 0xFF),
+        PanelEdge: Color.FromArgb(0x2A, 0x6D, 0x4A, 0xFF),
+        Text: Color.FromRgb(0x1C, 0x17, 0x33),
+        Muted: Color.FromRgb(0x62, 0x5B, 0x80),
+        Track: Color.FromArgb(0x1E, 0x6D, 0x4A, 0xFF),
+        Page: Color.FromRgb(0xF3, 0xF1, 0xFA),
         Card: Color.FromRgb(0xFF, 0xFF, 0xFF),
-        Hover: Color.FromArgb(0x14, 0x28, 0x80, 0xD8),
+        Hover: Color.FromArgb(0x14, 0x6D, 0x4A, 0xFF),
         Shadow: 0.18);
 
     private sealed record Palette(
@@ -60,11 +61,21 @@ internal static class Theme
 
     private static Palette _palette = DarkPalette;
 
-    public static Color AccentColor => IsDark ? Color.FromRgb(0xEB, 0x24, 0x40) : Color.FromRgb(0x17, 0x71, 0xCB);
-    public static Color AccentColor2 => IsDark ? Color.FromRgb(0xAC, 0x10, 0x2D) : Color.FromRgb(0x42, 0xA5, 0xEF);
+    /// <summary>Violet; the gradient runs from it to <see cref="AccentColor2"/> (teal). Dark enough for white text in both themes.</summary>
+    public static Color AccentColor => IsDark ? Color.FromRgb(0x7A, 0x5A, 0xFF) : Color.FromRgb(0x6D, 0x4A, 0xFF);
+    public static Color AccentColor2 => IsDark ? Color.FromRgb(0x0E, 0x9A, 0xB8) : Color.FromRgb(0x08, 0x91, 0xB2);
 
-    /// <summary>Red/black or blue/white, used for the selected slice, active tab and progress bars.</summary>
+    /// <summary>Violet → teal, used for the selected slice, active tab and progress bars.</summary>
     public static LinearGradientBrush AccentGradient => Freeze(new LinearGradientBrush(AccentColor, AccentColor2, new Point(0, 0), new Point(1, 1)));
+
+    /// <summary>A thin violet → teal outline around the wheel and its centre.</summary>
+    public static LinearGradientBrush AccentRing => Freeze(new LinearGradientBrush(
+        Color.FromArgb(0xB0, AccentColor.R, AccentColor.G, AccentColor.B),
+        Color.FromArgb(0xB0, AccentColor2.R, AccentColor2.G, AccentColor2.B), new Point(0, 0), new Point(1, 1)));
+
+    /// <summary>Corner radius of cards and panels.</summary>
+    public static readonly CornerRadius CardCorners = new(18);
+
 
     public static SolidColorBrush Accent => Freeze(new SolidColorBrush(AccentColor));
     public static readonly SolidColorBrush TextOnAccent = Freeze(new SolidColorBrush(Colors.White));

@@ -79,8 +79,8 @@ internal static class Controls
             Background = Theme.Card,
             BorderBrush = Theme.PanelBorder,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(18, 14, 18, 14),
+            CornerRadius = Theme.CardCorners,
+            Padding = new Thickness(20, 16, 20, 16),
             Margin = new Thickness(0, 0, 0, 4),
             Child = content,
         };
@@ -104,10 +104,9 @@ internal static class Controls
         foreach (var (label, value) in options)
         {
             var text = new TextBlock { Text = label, FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center };
-            var pill = new Border
+            var pill = new PillBorder
             {
-                CornerRadius = new CornerRadius(7),
-                Padding = new Thickness(12, 5, 12, 6),
+                Padding = new Thickness(13, 5, 13, 6),
                 Background = Brushes.Transparent,
                 Cursor = Cursors.Hand,
                 Child = text,
@@ -122,11 +121,10 @@ internal static class Controls
             panel.Children.Add(pill);
         }
         Select(selected);
-        return new Border
+        return new PillBorder
         {
             Background = Theme.Track,
-            CornerRadius = new CornerRadius(9),
-            Padding = new Thickness(2),
+            Padding = new Thickness(3),
             Child = panel,
         };
     }
@@ -249,13 +247,12 @@ internal static class Controls
         }
         content.Children.Add(new TextBlock { Text = text, FontSize = 13, Foreground = foreground, FontWeight = primary ? FontWeights.SemiBold : FontWeights.Normal, VerticalAlignment = VerticalAlignment.Center });
         var normal = primary ? Theme.AccentGradient : Theme.Card;
-        var button = new Border
+        var button = new PillBorder
         {
             Background = normal,
             BorderBrush = primary ? Brushes.Transparent : Theme.PanelBorder,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(14, 6, 14, 7),
+            Padding = new Thickness(16, 7, 16, 8),
             Cursor = Cursors.Hand,
             Child = content,
             HorizontalAlignment = HorizontalAlignment.Left,
@@ -293,11 +290,20 @@ internal static class Controls
     }
 
     /// <summary>A small coloured status label, e.g. "found" / "missing".</summary>
-    public static Border Badge(string text, bool good) => new()
+    public static Border Badge(string text, bool good) => new PillBorder
     {
-        CornerRadius = new CornerRadius(6),
-        Padding = new Thickness(8, 2, 8, 3),
+        Padding = new Thickness(9, 2, 9, 3),
         Background = new SolidColorBrush(Color.FromArgb(0x26, good ? (byte)0x3C : (byte)0xF0, good ? (byte)0xC3 : (byte)0x5A, good ? (byte)0x6E : (byte)0x5A)),
         Child = new TextBlock { Text = text, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = good ? Theme.Success : Theme.Error },
     };
+}
+
+/// <summary>A border with fully round ends at any height (WPF draws oversized corner radii as ellipses).</summary>
+internal sealed class PillBorder : Border
+{
+    protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+    {
+        base.OnRenderSizeChanged(sizeInfo);
+        CornerRadius = new CornerRadius(sizeInfo.NewSize.Height / 2);
+    }
 }

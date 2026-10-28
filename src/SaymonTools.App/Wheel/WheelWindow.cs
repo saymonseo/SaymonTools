@@ -27,12 +27,13 @@ internal sealed class WheelWindow : Window
 {
     public delegate IReadOnlyList<Operation> OperationSource(WheelKind wheel, IReadOnlyList<FileItem> items);
 
-    private const double OuterRadius = 196;
-    private const double InnerRadius = 80;
-    private const double Rim = 9;
-    private const double Gap = 6;
-    private const double Corner = 11;
-    private const double PopOut = 7;
+    // Petal-like slices: wide gaps and soft corners around a ringed centre.
+    private const double OuterRadius = 192;
+    private const double InnerRadius = 78;
+    private const double Rim = 12;
+    private const double Gap = 10;
+    private const double Corner = 20;
+    private const double PopOut = 9;
 
     /// <summary>Room around the disc for its shadow.</summary>
     private const double Pad = 16;
@@ -57,7 +58,7 @@ internal sealed class WheelWindow : Window
     private readonly TextBlock _title = HubText(16, FontWeights.SemiBold);
     private readonly TextBlock _detail = HubText(11.5, FontWeights.Normal);
     private readonly StackPanel _tabs = new() { Orientation = Orientation.Horizontal };
-    private readonly Border _tabTrack = new() { CornerRadius = new CornerRadius(10), Padding = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 0) };
+    private readonly Border _tabTrack = new PillBorder { Padding = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 0) };
     private readonly StackPanel _hubContent = new() { Width = InnerRadius * 1.75 };
 
     private IReadOnlyList<FileItem> _items;
@@ -604,8 +605,8 @@ internal sealed class WheelWindow : Window
             Width = 2 * disc,
             Height = 2 * disc,
             Fill = Theme.Backdrop,
-            Stroke = Theme.BackdropEdge,
-            StrokeThickness = 1,
+            Stroke = Theme.AccentRing,
+            StrokeThickness = 1.5,
             Effect = Theme.Shadow(28),
         };
         Canvas.SetLeft(backdrop, Pad);
@@ -657,14 +658,14 @@ internal sealed class WheelWindow : Window
             _canvas.Children.Add(group);
         }
 
-        var hubSize = 2 * (InnerRadius - 6);
+        var hubSize = 2 * (InnerRadius - 9);
         var hub = new Ellipse
         {
             Width = hubSize,
             Height = hubSize,
             Fill = Theme.Hub,
-            Stroke = Theme.PanelBorder,
-            StrokeThickness = 1,
+            Stroke = Theme.AccentRing,
+            StrokeThickness = 2,
             Effect = Theme.Shadow(12),
         };
         Canvas.SetLeft(hub, Size / 2 - hubSize / 2);
@@ -686,7 +687,7 @@ internal sealed class WheelWindow : Window
     {
         var canvas = new Canvas { Width = Size, Height = Size };
         var disc = OuterRadius + Rim;
-        var backdrop = new Ellipse { Width = 2 * disc, Height = 2 * disc, Fill = Theme.Backdrop, Stroke = Theme.BackdropEdge, StrokeThickness = 1, Effect = Theme.Shadow(28) };
+        var backdrop = new Ellipse { Width = 2 * disc, Height = 2 * disc, Fill = Theme.Backdrop, Stroke = Theme.AccentRing, StrokeThickness = 1.5, Effect = Theme.Shadow(28) };
         Canvas.SetLeft(backdrop, Pad);
         Canvas.SetTop(backdrop, Pad);
         canvas.Children.Add(backdrop);
@@ -726,8 +727,8 @@ internal sealed class WheelWindow : Window
         if (n == 0)
             canvas.Children.Add(new Path { Data = Ring(), Fill = Theme.Slice, Stroke = Theme.SliceEdge, StrokeThickness = 1, Opacity = 0.5 });
 
-        var hubSize = 2 * (InnerRadius - 6);
-        var hub = new Ellipse { Width = hubSize, Height = hubSize, Fill = Theme.Hub, Stroke = Theme.PanelBorder, StrokeThickness = 1, Effect = Theme.Shadow(12) };
+        var hubSize = 2 * (InnerRadius - 9);
+        var hub = new Ellipse { Width = hubSize, Height = hubSize, Fill = Theme.Hub, Stroke = Theme.AccentRing, StrokeThickness = 2, Effect = Theme.Shadow(12) };
         Canvas.SetLeft(hub, Size / 2 - hubSize / 2);
         Canvas.SetTop(hub, Size / 2 - hubSize / 2);
         canvas.Children.Add(hub);
@@ -845,10 +846,9 @@ internal sealed class WheelWindow : Window
             if (key == Input.ModifierKey.None && wheel != _wheel)
                 continue;
             var active = wheel == _wheel;
-            var tab = new Border
+            var tab = new PillBorder
             {
-                CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(7, 1, 7, 2),
+                Padding = new Thickness(8, 1, 8, 2),
                 Background = active ? Theme.AccentGradient : Brushes.Transparent,
                 Cursor = Mode == WheelMode.Click ? Cursors.Hand : null,
                 ToolTip = AppSettings.WheelName(wheel),

@@ -100,7 +100,7 @@ internal sealed class WatchFolderDialog : Window
             Background = Theme.Card,
             BorderBrush = Theme.PanelBorder,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
+            CornerRadius = Theme.CardCorners,
             Padding = new Thickness(6, 4, 6, 4),
             Child = list,
         });
@@ -134,9 +134,8 @@ internal sealed class WatchFolderDialog : Window
 
     private Border Chip(string name, bool active, int index)
     {
-        var chip = new Border
+        var chip = new PillBorder
         {
-            CornerRadius = new CornerRadius(999),
             Padding = new Thickness(14, 6, 14, 7),
             Margin = new Thickness(0, 0, 8, 8),
             Background = active ? Theme.AccentGradient : Theme.Card,

@@ -198,7 +198,7 @@ internal sealed partial class SettingsWindow : Window
         var name = Text("SaymonTools", 19, FontWeights.SemiBold);
         name.FontFamily = Theme.DisplayFont;
         names.Children.Add(name);
-        names.Children.Add(Text(T("A new shape for your files.", "Новая форма ваших файлов."), 12, brush: Theme.Muted));
+        names.Children.Add(Text(T("Files in one gesture.", "Файлы — в один жест."), 12, brush: Theme.Muted));
         brand.Children.Add(names);
         DockPanel.SetDock(brand, Dock.Top);
         dock.Children.Add(brand);
@@ -236,10 +236,9 @@ internal sealed partial class SettingsWindow : Window
             Margin = new Thickness(0, 0, 14, 0),
         });
         row.Children.Add(Text(PageName(page), 14, active ? FontWeights.SemiBold : FontWeights.Normal, wrap: false));
-        var item = new Border
+        var item = new PillBorder
         {
             Background = active ? Theme.AccentSoft : System.Windows.Media.Brushes.Transparent,
-            CornerRadius = new CornerRadius(9),
             Padding = new Thickness(14, 10, 14, 10),
             Margin = new Thickness(0, 0, 0, 3),
             Cursor = Cursors.Hand,

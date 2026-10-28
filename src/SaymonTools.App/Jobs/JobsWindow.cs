@@ -87,13 +87,13 @@ internal sealed class JobCard : Border
         Background = Theme.Panel;
         BorderBrush = Theme.PanelBorder;
         BorderThickness = new Thickness(1);
-        CornerRadius = new CornerRadius(14);
+        CornerRadius = new CornerRadius(20);
         Margin = new Thickness(12, 6, 12, 6);
         Padding = new Thickness(16, 14, 12, 14);
         Effect = Theme.Shadow(22);
 
         var icon = new Grid { Width = 40, Height = 40, Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Top };
-        icon.Children.Add(new Border { CornerRadius = new CornerRadius(10), Background = Theme.Track });
+        icon.Children.Add(new Border { CornerRadius = new CornerRadius(20), Background = Theme.Track });
         var image = iconPath is null ? null : SaymonTools.App.Shell.FileIcons.Get(iconPath);
         if (image is not null)
             icon.Children.Add(new Image { Source = image, Width = 28, Height = 28 });

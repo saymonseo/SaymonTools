@@ -48,7 +48,7 @@ internal sealed class UploadResultWindow : Window
         root.Children.Add(new Border
         {
             Background = Brushes.White,
-            CornerRadius = new CornerRadius(14),
+            CornerRadius = new CornerRadius(18),
             Padding = new Thickness(14),
             HorizontalAlignment = HorizontalAlignment.Center,
             Child = qr,

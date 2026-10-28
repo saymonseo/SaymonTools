@@ -17,15 +17,15 @@ internal sealed partial class SettingsWindow
         });
         var heading = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         heading.Children.Add(Text($"{Brand.Name} {Shell.Updater.Current.ToString(2)}", 30, FontWeights.SemiBold));
-        heading.Children.Add(Text(T("A new shape for your files.", "Новая форма ваших файлов."), 14, brush: Theme.Muted));
+        heading.Children.Add(Text(T("Files in one gesture.", "Файлы — в один жест."), 14, brush: Theme.Muted));
         header.Children.Add(heading); root.Children.Add(header);
-        root.Children.Add(Card(T("Author", "Автор"), Brand.Author, null, glyph: ""));
+        root.Children.Add(Card(T("Author", "Автор"), Brand.Author, null, glyph: "\uE77B"));
         root.Children.Add(SectionHeader(T("Open source", "Открытый код")));
         root.Children.Add(Card(T("Based on Sweetch", "Основано на Sweetch"),
             T("SaymonTools is built on the MIT-licensed Sweetch project. Its copyright notices are kept in LICENSE.", "SaymonTools сделан на основе проекта Sweetch под лицензией MIT. Уведомления об авторских правах сохранены в LICENSE."),
-            Button("GitHub", () => Shell.Updater.Open(Brand.Upstream), glyph: ""), glyph: ""));
+            Button("GitHub", () => Shell.Updater.Open(Brand.Upstream), glyph: "\uE8A7"), glyph: "\uE943"));
         root.Children.Add(SectionHeader(T("Updates", "Обновления")));
-        root.Children.Add(Card($"{Brand.Name} {Shell.Updater.Current.ToString(2)}", T("Automatic updates are disabled.", "Автообновления отключены."), null, glyph: ""));
+        root.Children.Add(Card($"{Brand.Name} {Shell.Updater.Current.ToString(2)}", T("Automatic updates are disabled.", "Автообновления отключены."), null, glyph: "\uE895"));
         var footer = Text(T("Local processing. Your files stay on your computer.", "Локальная обработка. Ваши файлы остаются на компьютере."), 12, brush: Theme.Muted);
         footer.Margin = new Thickness(2, 24, 0, 0); root.Children.Add(footer);
     }

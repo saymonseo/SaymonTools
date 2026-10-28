@@ -175,7 +175,7 @@ internal sealed class RenameDialog : Window
             Background = Theme.Card,
             BorderBrush = Theme.PanelBorder,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
+            CornerRadius = Theme.CardCorners,
             Padding = new Thickness(4),
             Child = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = _rows },
         });
@@ -236,7 +236,7 @@ internal sealed class RenameDialog : Window
         return new Border
         {
             Padding = new Thickness(12, 7, 12, 7),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = new CornerRadius(10),
             Background = bad ? new SolidColorBrush(Color.FromArgb(0x1A, 0xF0, 0x5A, 0x5A)) : Brushes.Transparent,
             Child = grid,
         };
