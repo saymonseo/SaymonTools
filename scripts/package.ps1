@@ -12,10 +12,12 @@ try {
     }
     if (-not (Test-Path publish/SaymonTools.exe)) { throw 'Run ./build.ps1 first: publish/SaymonTools.exe is missing.' }
 
-    $iscc = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Inno Setup*\ISCC.exe", "$env:ProgramFiles\Inno Setup*\ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    # Machine-wide or per-user (winget install --scope user) Inno Setup.
+    $candidates = "${env:ProgramFiles(x86)}\Inno Setup*\ISCC.exe", "$env:ProgramFiles\Inno Setup*\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup*\ISCC.exe"
+    $iscc = Get-ChildItem -Path $candidates -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $iscc -and $env:CI) {
         choco install innosetup -y --no-progress | Out-Null
-        $iscc = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Inno Setup*\ISCC.exe", "$env:ProgramFiles\Inno Setup*\ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+        $iscc = Get-ChildItem -Path $candidates -ErrorAction SilentlyContinue | Select-Object -First 1
     }
     if (-not $iscc) { throw 'Inno Setup (ISCC.exe) not found. Install it: winget install JRSoftware.InnoSetup' }
 

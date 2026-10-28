@@ -30,6 +30,14 @@
 
 3. GitHub Actions (`.github/workflows/release.yml`) прогонит тесты, соберёт установщик и ZIP и опубликует релиз. Установленные копии получат обновление при следующей проверке.
 
+Без GitHub Actions то же самое делается вручную (нужен Inno Setup 6: `winget install JRSoftware.InnoSetup`):
+
+```powershell
+./build.ps1 -Version 1.2.0
+./scripts/package.ps1 -Version 1.2.0
+gh release create v1.2.0 artifacts/SaymonTools-Setup-1.2.0.exe artifacts/SaymonTools-1.2.0-win-x64.zip --title "SaymonTools 1.2.0" --generate-notes
+```
+
 ## Форматы
 
 Изображения, аудио, видео, PDF, документы, таблицы, презентации, субтитры и архивы. Доступные операции зависят от типа входного файла. Pandoc включён в архив. Для аудио и видео FFmpeg скачивается через настройки; LibreOffice для части операций Office/PDF устанавливается отдельно. Обработка файлов локальная: в интернет файлы отправляются, только если выбрать «В интернет».
