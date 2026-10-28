@@ -177,14 +177,19 @@ public static class Catalog
             if (length is <= 0)
                 throw new ConversionException(T("The end must come after the start.", "Конец должен быть позже начала."));
             var format = FfmpegBackend.SafeContainer(item.Format);
+            // "Fast": the streams are copied as they are; the cut snaps to the keyframe before the start.
+            var copy = ctx.Param("copy") == "1";
             var args = new List<string>();
             if (length is not null)
                 args.AddRange(["-t", length.Value.ToString("0.###", CultureInfo.InvariantCulture)]);
-            args.AddRange(Formats.Video.Contains(item.Format)
-                ? H264(ctx.Settings.VideoCrf, "medium", null, "160k")
-                : FfmpegBackend.CodecArgs(format, ctx.Settings));
+            if (copy)
+                args.AddRange(["-map", "0", "-c", "copy", "-avoid_negative_ts", "make_zero"]);
+            else
+                args.AddRange(Formats.Video.Contains(item.Format)
+                    ? H264(ctx.Settings.VideoCrf, "medium", null, "160k")
+                    : FfmpegBackend.CodecArgs(format, ctx.Settings));
             return [await FfmpegBackend.TransformAsync(item, T("trimmed", "обрезано"), ctx, p, args,
-                Formats.Video.Contains(item.Format) ? "mp4" : format,
+                copy ? item.Format : Formats.Video.Contains(item.Format) ? "mp4" : format,
                 inputArgs: start > 0 ? ["-ss", start.ToString("0.###", CultureInfo.InvariantCulture)] : null,
                 duration: length)];
         }, subtitle: T("start–end", "начало–конец"))

@@ -142,6 +142,16 @@ public static partial class FfmpegBackend
         return duration is null && !video && !audio ? null : new MediaInfo(duration, width, height, fps, video, audio);
     }
 
+    /// <summary>Saves the frame at <paramref name="seconds"/> as a JPEG <paramref name="height"/> pixels high (for previews).</summary>
+    public static Task FrameAsync(string ffmpeg, string path, double seconds, int height, string output, CancellationToken ct) =>
+        ProcessRunner.RunAsync(ffmpeg,
+        [
+            "-hide_banner", "-nostdin", "-y",
+            // Seeking before the input jumps straight to the nearest keyframe and decodes from there: fast even in long files.
+            "-ss", Math.Max(0, seconds).ToString("0.###", CultureInfo.InvariantCulture), "-i", path,
+            "-frames:v", "1", "-vf", $"scale=-2:{height}", "-q:v", "4", output,
+        ], ct);
+
     /// <summary>The "Custom…" conversion: re-encodes with <see cref="VideoSettings"/> from the operation's parameters.</summary>
     /// <param name="suffix">Added to the output name; by default it says what changed ("1080p, no sound").</param>
     public static async Task<string> CustomAsync(FileItem item, VideoSettings settings, OperationContext ctx, IProgress<double> progress, string? suffix = null)

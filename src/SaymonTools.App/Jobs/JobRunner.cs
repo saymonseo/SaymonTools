@@ -65,6 +65,22 @@ internal sealed class JobRunner(AppSettings settings, ToolLocator tools)
             op = quick.Custom;
             parameters = chosen;
         }
+        if (parameters.Count == 0 && op.Id is "video.trim" or "audio.trim")
+        {
+            // Trim with a preview: the start and end are picked on the video itself (the first file sets them for all).
+            var owner = ForegroundHelper.Host();
+            try
+            {
+                var trim = new TrimDialog(items[0], tools) { Owner = owner };
+                if (trim.ShowDialog() != true)
+                    return;
+                parameters = trim.Values;
+            }
+            finally
+            {
+                owner.Close();
+            }
+        }
         if (op.Parameters.Count > 0 && parameters.Count == 0)
         {
             var dialog = new ParameterDialog(op, items);

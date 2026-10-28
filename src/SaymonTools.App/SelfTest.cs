@@ -148,6 +148,26 @@ internal static class SelfTest
         imageOptions.Close();
         log.Add($"ok {Path.GetFileName(outDir)}/custom options");
 
+        if (tools.Has(ExternalTool.Ffmpeg))
+        {
+            var sample = Path.Combine(outDir, "trim-sample.mp4");
+            Task.Run(() => ProcessRunner.RunAsync(tools.Ffmpeg!, ["-hide_banner", "-y", "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=30:duration=12",
+                "-f", "lavfi", "-i", "sine=duration=12", "-shortest", "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", sample], default)).GetAwaiter().GetResult();
+            // A playing video can't be rendered off screen; frames read by ffmpeg stand in for it.
+            TrimDialog.StillsOnly = true;
+            var trimWindow = new TrimDialog(new FileItem(sample), tools);
+            trimWindow.OpenForPreview();
+            Pump(() => trimWindow.PreviewComplete, TimeSpan.FromSeconds(30));
+            Check(trimWindow.Ready, "trim reads the video's length");
+            trimWindow.SelectForPreview(3, 9);
+            Pump(() => trimWindow.PreviewComplete, TimeSpan.FromSeconds(10));
+            SaveWindow(trimWindow, Path.Combine(outDir, "trim-preview.png"), 920);
+            Check(trimWindow.Values["start"] == "3" && trimWindow.Values["end"] == "9", "trim start and end");
+            trimWindow.Close();
+            TrimDialog.StillsOnly = false;
+            log.Add($"ok {Path.GetFileName(outDir)}/trim-preview");
+        }
+
         SettingsWindow.Operations = () => [.. core, .. actions];
         settings.FavoriteOperations = ["image.to.webp", "image.compress"];
         settings.HiddenOperations = ["image.to.tiff"];
