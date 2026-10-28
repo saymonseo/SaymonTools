@@ -15,7 +15,7 @@
     <ApplicationIcon>Assets\SaymonTools.ico</ApplicationIcon>
     <StartupObject>SaymonTools.App.Program</StartupObject>
     <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <SatelliteResourceLanguages>en;ru</SatelliteResourceLanguages>
     <!--
       Smaller download: trim only libraries marked as trim-safe (the .NET runtime, the Windows SDK projection…);
